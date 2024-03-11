@@ -1,4 +1,6 @@
 <?php
+
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +18,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/admins-only', function() {
     return 'Only admins should be able to see this page';
 })->middleware('can:visitAdminPages');
+
+// Follow related routes
+Route::post('/create-follow/{user:username}', [FollowController::class, 'createFollow'])->middleware('mustBeLoggedIn');
+Route::delete('/follow/{user:username}', [FollowController::class, 'removeFollow'])->middleware('mustBeLoggedIn');
 
 // User-related routes
 Route::get('/', [UserController::class, 'showCorrectHomePage'])->name('login');
