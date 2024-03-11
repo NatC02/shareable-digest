@@ -58,6 +58,17 @@ class UserController extends Controller
             ]
         );
     }
+
+    public function profileRaw(User $user) {
+        return response()->json([
+            'theHTML' => view(
+                'profile-posts-only',
+                ['posts'=>$user->posts()->latest()->get()]
+            )->render(),
+            'docTitle' => $user->username . "'s Profile"
+        ]);
+    }
+
     public function profileFollowers(User $user) {
         $this->getSharedProfileData($user);
         return view(
@@ -65,76 +76,100 @@ class UserController extends Controller
             [
                 'followers' => $user->followers()->latest()->get(),
             ]
-            );
-        }
-        public function profileFollowing(User $user) {
-            $this->getSharedProfileData($user);
+        );
+    }
+
+    public function profileFollowersRaw(User $user) {
+        return response()->json([
+            'theHTML' => view(
+                'profile-followers-only',
+                ['followers' => $user->followers()->latest()->get()]
+            )->render(),
+            'docTitle' => $user->username . "'s Followers"
+        ]);
+    }
+
+    public function profileFollowing(User $user) {
+        $this->getSharedProfileData($user);
+        return view(
+            'profile-following',
+            [
+                'following' => $user->followingTheseUsers()->latest()->get(),
+            ]
+        );
+    }
+
+    public function profileFollowingRaw(User $user) {
+        return response()->json([
+            'theHTML' => view(
+                'profile-following-only',
+                ['following' => $user->followingTheseUsers()->latest()->get()]
+            )->render(),
+            'docTitle' => 'Who ' . $user->username . " follows"
+        ]);
+    }
+
+    public function logout() {
+        event(new OurExampleEvent([
+            'username' => auth()->user()->username,
+            'action' => 'logout'
+        ]));
+        auth()->logout();
+        return redirect('/')->with('success', 'You are now logged out.');;
+    }
+    public function showCorrectHomePage() {
+        if (auth()->check()) {
             return view(
-                'profile-following',
+                'homepage-feed',
                 [
-                    'following' => $user->followingTheseUsers()->latest()->get(),
+                    'posts' => auth()->user()->feedPosts()->latest()->paginate(4)
                 ]
-                );
-            }
-            public function logout() {
-                event(new OurExampleEvent([
-                    'username' => auth()->user()->username,
-                    'action' => 'logout'
-                ]));
-                auth()->logout();
-                return redirect('/')->with('success', 'You are now logged out.');;
-            }
-            public function showCorrectHomePage() {
-                if (auth()->check()) {
-                    return view(
-                        'homepage-feed',
-                        [
-                            'posts' => auth()->user()->feedPosts()->latest()->paginate(4)
-                        ]
-                    );
-                }
-            }
-            public function login(Request $request) {
-                $incomingFields = $request->validate([
-                    'loginusername' => 'required',
-                    'loginpassword' => 'required',
-                ]);
-                if (auth()->attempt([
-                    'username' => $incomingFields['loginusername'],
-                    'password' => $incomingFields['loginpassword'],
-                ])) {
-                    $request->session()->regenerate();
-                    event(new OurExampleEvent([
-                        'username' => auth()->user()->username,
-                        'action' => 'login'
-                    ]));
-                    return redirect('/')->with('success', 'You have successfully logged in.');
-                } else {
-                    return redirect('/')->with('failure', 'Invalid login.');;
-                }
-            }
-            public function register(Request $request) {
-                $incomingFields = $request->validate([
-                    'username' => [
-                        'required',
-                        'min:3',
-                        'max:20',
-                        Rule::unique('users', 'username')
-                    ],
-                    'email' => [
-                        'required',
-                        'email',
-                        Rule::unique('users', 'email')
-                    ],
-                    'password' => [
-                        'required',
-                        'min:8',
-                        'confirmed'
-                    ],
-                ]);
-                $incomingFields['password'] = bcrypt($incomingFields['password']);
-                $user = User::create($incomingFields);
-                auth()->login($user);
-                return redirect('/')->with('success', 'Thank you for creating an account.');
-            }
+            );
+        } else {
+            return view('homepage');
         }
+    }
+    public function login(Request $request) {
+        $incomingFields = $request->validate([
+            'loginusername' => 'required',
+            'loginpassword' => 'required',
+        ]);
+        if (auth()->attempt([
+            'username' => $incomingFields['loginusername'],
+            'password' => $incomingFields['loginpassword'],
+        ])) {
+            $request->session()->regenerate();
+            event(new OurExampleEvent([
+                'username' => auth()->user()->username,
+                'action' => 'login'
+            ]));
+            return redirect('/')->with('success', 'You have successfully logged in.');
+        } else {
+            return redirect('/')->with('failure', 'Invalid login.');;
+        }
+    }
+    public function register(Request $request) {
+        $incomingFields = $request->validate([
+            'username' => [
+                'required',
+                'min:3',
+                'max:20',
+                Rule::unique('users', 'username')
+            ],
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')
+            ],
+            'password' => [
+                'required',
+                'min:8',
+                'confirmed'
+            ],
+        ]);
+        $incomingFields['password'] = bcrypt($incomingFields['password']);
+        $user = User::create($incomingFields);
+        auth()->login($user);
+        return redirect('/')->with('success', 'Thank you for creating an account.');
+    }
+}
