@@ -8,6 +8,11 @@ use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
+    public function search(string $term) {
+        $posts = Post::search($term)->get();
+        $posts->load('user:id,username,avatar');
+        return $posts;
+    }
     
     public function delete(Post $post) {
         if (auth()->user()->cannot('delete', $post)) {
