@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\ChatMessage;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
@@ -42,20 +43,4 @@ Route::get('/search/{term}', [PostController::class, 'search'])->middleware('mus
 Route::get('/profile/{user:username}', [UserController::class, 'profile']);
 
 // Chat route
-Route::post('/send-chat-message', function(Request $request) {
-    $formFields = $request->validate([
-        'textvalue' => 'required'
-    ]);
-
-    if (!trim(strip_tags($formFields['textvalue']))) {
-        return response()->noContent();
-    }
-
-    broadcast(new ChatMessage([
-        'username' => auth()->user()->username,
-        'textvalue' => strip_tags($request->textvalue),
-        'avatar' => strip_tags(auth()->user()->avatar),
-    ]))->toOthers();
-
-    return response()->noContent();
-})->middleware('mustBeLoggedIn');
+Route::post('/send-chat-message', [ChatController::class, 'sendMessage'])->middleware('mustBeLoggedIn');
