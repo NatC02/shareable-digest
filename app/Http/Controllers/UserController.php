@@ -5,12 +5,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Intervention\Image\Facades\Image;
+
 class UserController extends Controller
 {
     public function storeAvatar(Request $request) {
         $request->validate([
             'avatar' => 'required|image|max:3000'
         ]);
+
         $user = auth()->user();
         $fileName = $user->id . '-' . uniqid() . '.jpg';
 
@@ -26,6 +28,7 @@ class UserController extends Controller
         }
 
         return back()->with('success', 'Congrats on the new Avatar.');
+
     }
 
     public function showAvatarForm() {
